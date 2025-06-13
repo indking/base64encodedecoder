@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Encoder and Decoder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            min-height: 600px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-encode {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-decode {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-copy {
+            background: #fd7e14;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #007bff;
+            color: white;
+        }
+
+        .text-area {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .text-area:focus {
+            border-color: #007bff;
+            background: white;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        .output-section {
+            margin-top: 20px;
+        }
+
+        .section-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .mode-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Base64 Encoder and Decoder</h1>
+            <p class="subtitle">Encode and decode text to/from Base64 format instantly</p>
+        </div>
+
+        <div class="mode-indicator" id="modeIndicator">Ready to encode/decode</div>
+
+        <div class="button-group">
+            <button class="btn btn-encode" onclick="encodeText()">Encode</button>
+            <button class="btn btn-decode" onclick="decodeText()">Decode</button>
+            <button class="btn btn-copy" onclick="copyOutput()">Copy</button>
+            <button class="btn btn-clear" onclick="clearAll()">Clear</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="input-section">
+            <div class="section-label">Input Text:</div>
+            <textarea 
+                class="text-area" 
+                id="inputText" 
+                placeholder="Enter text to encode or Base64 string to decode..."
+                oninput="updateStats()"
+            ></textarea>
+            <div class="stats">
+                <span>Characters: <span id="inputLength">0</span></span>
+                <span>Bytes: <span id="inputBytes">0</span></span>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <div class="section-label">Output:</div>
+            <textarea 
+                class="text-area" 
+                id="outputText" 
+                placeholder="Result will appear here..."
+                readonly
+            ></textarea>
+            <div class="stats">
+                <span>Characters: <span id="outputLength">0</span></span>
+                <span>Bytes: <span id="outputBytes">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(message, type = 'error') {
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            
+            // Hide both messages first
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (type === 'error') {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            } else {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+            }
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function updateModeIndicator(mode) {
+            const indicator = document.getElementById('modeIndicator');
+            indicator.textContent = mode;
+        }
+
+        function updateStats() {
+            const inputText = document.getElementById('inputText').value;
+            const outputText = document.getElementById('outputText').value;
+            
+            // Update input stats
+            document.getElementById('inputLength').textContent = inputText.length;
+            document.getElementById('inputBytes').textContent = new Blob([inputText]).size;
+            
+            // Update output stats
+            document.getElementById('outputLength').textContent = outputText.length;
+            document.getElementById('outputBytes').textContent = new Blob([outputText]).size;
+        }
+
+        function encodeText() {
+            const inputText = document.getElementById('inputText').value;
+            const outputText = document.getElementById('outputText');
+            
+            if (!inputText.trim()) {
+                showMessage('Please enter some text to encode.', 'error');
+                return;
+            }
+            
+            try {
+                const encoded = btoa(unescape(encodeURIComponent(inputText)));
+                outputText.value = encoded;
+                updateModeIndicator('Text encoded to Base64');
+                showMessage('Text successfully encoded to Base64!', 'success');
+                updateStats();
+            } catch (error) {
+                showMessage('Error encoding text: ' + error.message, 'error');
+            }
+        }
+
+        function decodeText() {
+            const inputText = document.getElementById('inputText').value;
+            const outputText = document.getElementById('outputText');
+            
+            if (!inputText.trim()) {
+                showMessage('Please enter a Base64 string to decode.', 'error');
+                return;
+            }
+            
+            try {
+                const decoded = decodeURIComponent(escape(atob(inputText)));
+                outputText.value = decoded;
+                updateModeIndicator('Base64 decoded to text');
+                showMessage('Base64 successfully decoded to text!', 'success');
+                updateStats();
+            } catch (error) {
+                showMessage('Error decoding Base64: Invalid Base64 string.', 'error');
+            }
+        }
+
+        function copyOutput() {
+            const outputText = document.getElementById('outputText');
+            
+            if (!outputText.value) {
+                showMessage('No output to copy. Please encode or decode some text first.', 'error');
+                return;
+            }
+            
+            outputText.select();
+            outputText.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                showMessage('Output copied to clipboard!', 'success');
+            } catch (error) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(outputText.value).then(() => {
+                    showMessage('Output copied to clipboard!', 'success');
+                }).catch(() => {
+                    showMessage('Failed to copy to clipboard.', 'error');
+                });
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            updateModeIndicator('Ready to encode/decode');
+            updateStats();
+            showMessage('All fields cleared!', 'success');
+        }
+
+        // Real-time encoding/decoding (optional feature)
+        function enableRealTime() {
+            const inputText = document.getElementById('inputText');
+            let timeout;
+            
+            inputText.addEventListener('input', function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    const value = this.value.trim();
+                    if (value) {
+                        // Auto-detect if input looks like Base64
+                        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+                        if (base64Regex.test(value) && value.length % 4 === 0) {
+                            // Looks like Base64, try to decode
+                            try {
+                                const decoded = decodeURIComponent(escape(atob(value)));
+                                document.getElementById('outputText').value = decoded;
+                                updateModeIndicator('Auto-detected Base64 and decoded');
+                            } catch (e) {
+                                // If decode fails, it's probably not Base64
+                            }
+                        }
+                    }
+                }, 500);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            // Uncomment the line below to enable real-time processing
+            // enableRealTime();
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'e':
+                        e.preventDefault();
+                        encodeText();
+                        break;
+                    case 'd':
+                        e.preventDefault();
+                        decodeText();
+                        break;
+                    case 'c':
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            copyOutput();
+                        }
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        clearAll();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
